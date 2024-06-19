@@ -5,8 +5,8 @@ from pygame.locals import *
 
 pygame.init()
 vec = pygame.math.Vector2
-HEIGHT = 450
-WIDTH = 400
+HEIGHT = 700
+WIDTH = 1200
 ACC = 0.8
 FRIC = -0.12
 FPS = 60
@@ -33,25 +33,25 @@ class Player(pygame.sprite.Sprite):
         size = (160, 224)
 
         #initial state
-        position = (300,385)
+        position = (300,585)
         self.rect = pygame.Rect((position),size)
         self.pos = vec((position))
         self.vel = vec(0,0)
         self.accel = vec(0,0)
 
-
         self.facing_right = True
         self.facing_left = False
-
 
         #special variables to finetune animation
         self.can_jump = False
         self.falling = True
 
-        #jumping animation tweak for the animation to lock onto one frame of the animation
-        #useful for prolonged jumping acceleration and falling acceleration
-        self.jump_animation_peak = False
-        self.falling_animation_peak = False
+        #used by some animations that should hold its last frame
+        #example a very long jump, a very long fall
+        self.animation_lock = {
+            'jumping' : False,
+            'falling' : False,
+        }
     
         #handles animation
         #---animation sprite sheets
@@ -64,15 +64,18 @@ class Player(pygame.sprite.Sprite):
         self.jump_left = player_jump_left
         self.jump_right = player_jump_right
 
+        self.fall_left = player_fall_left
+        self.fall_right = player_fall_right
+
         self.animation_index = 0
         self.image = player_idle_right[self.animation_index]
 
         #frame based animation rendering
-        self.animation_frames = 6 
+        self.animation_frames = 9 
         self.current_frame = 0
 
     def move(self):
-        self.acc = vec(0,0.5)
+        self.acc = vec(0,0.3) #gravity
         pressed_keys = pygame.key.get_pressed()
 
         if pressed_keys[K_LEFT]:
@@ -96,8 +99,21 @@ class Player(pygame.sprite.Sprite):
         self.rect.midbottom = self.pos
 
     def animation_update(self):
-        # if statement boongaloo: walk, idle, and jump are fighting to be used as animation, some priorities should be done
-        #jump will take priority, whatever the x and y velocities, if we are jumping, we are jumping animating
+        #locking animations, currently jumping and falling counts as locking
+        #definition of locking: to repeat the last two frames of an extended player state
+        if self.animation_lock['jumping']:
+            #ending the lock
+            if int(self.vel.y) == 0:
+                self.animation_index = 0
+                self.animation_lock['jumping'] = False
+                self.animation_lock['falling'] = True
+
+            #stop the animation at this last frame
+            if self.image == self.images[-1]:
+                return
+        #jump
+        if int(self.vel.y) < 0: 
+            self.images = self.jump_left if self.facing_left else self.jump_right
 
         #walk
         if int(self.vel.x) > 0 and not self.falling:
@@ -112,10 +128,16 @@ class Player(pygame.sprite.Sprite):
             self.images = self.idle_left
 
         #jump
-        if int(self.vel.y) != 0:
+        if int(self.vel.y) < 0: 
             self.images = self.jump_left if self.facing_left else self.jump_right
+        #fall
+        if int(self.vel.y) > 0:
+            self.images = self.fall_left if self.facing_left else self.fall_right
 
         self.current_frame += 1
+        #currently just jumping and falling
+
+        #non-locking animation
         if self.current_frame >= self.animation_frames:
             self.current_frame = 0
             self.animation_index = (self.animation_index + 1) % len(self.images)
@@ -130,6 +152,7 @@ class Player(pygame.sprite.Sprite):
 
             self.falling = False
             self.can_jump = True
+            self.animation_lock['falling'] = False
 
         #animation
         self.animation_update()
@@ -137,6 +160,7 @@ class Player(pygame.sprite.Sprite):
     def jump(self):
         self.can_jump = False
         self.falling = True
+        self.animation_lock['jumping'] = True
         self.vel.y = -15
 
 class platform(pygame.sprite.Sprite):
@@ -156,6 +180,10 @@ player_walk_right = [pygame.transform.flip(image, True, False) for image in play
 #---- player jump todo: this is special because there are two locking frames: the jump peak and the jump falling frame
 player_jump_left = load_images(path='sprites/player/jump')
 player_jump_right = [pygame.transform.flip(image, True, False) for image in player_jump_left] 
+#---- player jump todo: this is special because there are two locking frames: the jump peak and the jump falling frame
+player_fall_left = load_images(path='sprites/player/fall')
+player_fall_right = [pygame.transform.flip(image, True, False) for image in player_fall_left] 
+
 
 PT1 = platform()
 P1 = Player()
