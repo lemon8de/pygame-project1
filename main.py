@@ -19,6 +19,7 @@ pygame.display.set_caption("Game")
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
+
         self.surf = pygame.Surface((30, 30))
         self.surf.fill((128,255,40))
         self.rect = self.surf.get_rect(center = (10, 420))
@@ -28,7 +29,7 @@ class Player(pygame.sprite.Sprite):
         self.accel = vec(0,0)
 
     def move(self):
-        self.acc = vec(0,0)
+        self.acc = vec(0,0.5)
         pressed_keys = pygame.key.get_pressed()
 
         if pressed_keys[K_LEFT]:
@@ -47,6 +48,15 @@ class Player(pygame.sprite.Sprite):
 
         self.rect.midbottom = self.pos
 
+    def update(self):
+        hits = pygame.sprite.spritecollide(P1, platforms, False)
+        if hits:
+            self.pos.y = hits[0].rect.top + 1
+            self.vel.y = 0 
+
+    def jump(self):
+        self.vel.y = -15
+
 class platform(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
@@ -54,14 +64,17 @@ class platform(pygame.sprite.Sprite):
         self.surf.fill((255,0,0))
         self.rect = self.surf.get_rect(center = (WIDTH/2, HEIGHT - 10))
 
+
+
 PT1 = platform()
 P1 = Player()
-
 
 all_sprites = pygame.sprite.Group()
 all_sprites.add(PT1)
 all_sprites.add(P1)
 
+platforms = pygame.sprite.Group()
+platforms.add(PT1)
 
 while True:
     for event in pygame.event.get():
@@ -69,7 +82,15 @@ while True:
             pygame.quit()
             sys.exit()
 
+        if event.type == pygame.KEYDOWN:
+            print("keydown")
+            if event.key == pygame.K_SPACE:
+                P1.jump()
+
     P1.move()
+    P1.update()
+
+
     displaysurface.fill((0,0,0))
     for entity in all_sprites:
         displaysurface.blit(entity.surf, entity.rect)
