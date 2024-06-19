@@ -38,10 +38,20 @@ class Player(pygame.sprite.Sprite):
         self.pos = vec((position))
         self.vel = vec(0,0)
         self.accel = vec(0,0)
+
+
         self.facing_right = True
         self.facing_left = False
+
+
+        #special variables to finetune animation
         self.can_jump = False
         self.falling = True
+
+        #jumping animation tweak for the animation to lock onto one frame of the animation
+        #useful for prolonged jumping acceleration and falling acceleration
+        self.jump_animation_peak = False
+        self.falling_animation_peak = False
     
         #handles animation
         #---animation sprite sheets
@@ -55,7 +65,6 @@ class Player(pygame.sprite.Sprite):
         self.jump_right = player_jump_right
 
         self.animation_index = 0
-        #this is the first image to display? question mark?
         self.image = player_idle_right[self.animation_index]
 
         #frame based animation rendering
