@@ -47,6 +47,8 @@ class Player(pygame.sprite.Sprite):
         self.animation_lock = {
             'jumping' : False,
             'falling' : False,
+            'left_movement' : False,
+            'right_movement' : False
         }
     
         #handles animation
@@ -72,11 +74,11 @@ class Player(pygame.sprite.Sprite):
         self.acc = vec(0,0.3) #gravity
         pressed_keys = pygame.key.get_pressed()
 
-        if pressed_keys[K_LEFT]:
+        if pressed_keys[K_LEFT] and not self.animation_lock['left_movement']:
             self.acc.x = -ACC
             self.facing_left = True
             self.facing_right = False
-        if pressed_keys[K_RIGHT]:
+        if pressed_keys[K_RIGHT] and not self.animation_lock['right_movement']:
             self.acc.x = ACC
             self.facing_right = True
             self.facing_left = False
@@ -149,16 +151,20 @@ class Player(pygame.sprite.Sprite):
             self.image = self.images[self.animation_index]
 
     def update(self):
-        #platform detection
+        #landed on the ground
         hits = pygame.sprite.spritecollide(P1, platform_sprites, False)
         if hits:
+            #collision
             self.pos.y = hits[0].rect.top + 1
             self.vel.y = 0 
 
+            #reset player states
             self.falling = False
             self.can_jump = True
             self.animation_lock['falling'] = False
             self.started_falling = False
+            P1.animation_lock['right_movement'] = False
+            P1.animation_lock['left_movement'] = False
 
         #animation
         self.animation_update()
@@ -211,6 +217,12 @@ while True:
             if event.key == pygame.K_SPACE and P1.can_jump:
                 #make sure to start the animation at the start
                 P1.animation_index = 0
+                if P1.facing_right:
+                    P1.animation_lock['left_movement'] = True
+                    P1.animation_lock['right_movement'] = False
+                if P1.facing_left:
+                    P1.animation_lock['right_movement'] = True
+                    P1.animation_lock['left_movement'] = False
                 P1.jump()
 
     P1.move()
