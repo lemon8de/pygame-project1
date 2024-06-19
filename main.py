@@ -7,7 +7,7 @@ pygame.init()
 vec = pygame.math.Vector2
 HEIGHT = 700
 WIDTH = 1200
-ACC = 0.8
+ACC = 1.3
 FRIC = -0.12
 FPS = 60
 FramePerSec = pygame.time.Clock()
@@ -71,7 +71,7 @@ class Player(pygame.sprite.Sprite):
         self.current_frame = 0
 
     def move(self):
-        self.acc = vec(0,0.3) #gravity
+        self.acc = vec(0,0.8) #gravity
         pressed_keys = pygame.key.get_pressed()
 
         if pressed_keys[K_LEFT] and not self.animation_lock['left_movement']:
@@ -173,14 +173,16 @@ class Player(pygame.sprite.Sprite):
         self.can_jump = False
         self.falling = True
         self.animation_lock['jumping'] = True
-        self.vel.y = -15
+        self.vel.y = -20 #jump value
 
 class platform(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, surf_xy, center_xy):
         super().__init__()
-        self.surf = pygame.Surface((WIDTH, 20))
+        #self.surf = pygame.Surface((WIDTH, 20))
+        self.surf = pygame.Surface(surf_xy)
         self.surf.fill((255,0,0))
-        self.rect = self.surf.get_rect(center = (WIDTH/2, HEIGHT - 10))
+        #self.rect = self.surf.get_rect(center = (WIDTH/2, HEIGHT - 10))
+        self.rect = self.surf.get_rect(center = center_xy)
 
 #animation set
 #---- player idle
@@ -197,7 +199,9 @@ player_fall_left = load_images(path='sprites/player/fall')
 player_fall_right = [pygame.transform.flip(image, True, False) for image in player_fall_left] 
 
 
-PT1 = platform()
+PT1 = platform(surf_xy =(WIDTH, 20), center_xy = (WIDTH/2, HEIGHT - 10))
+PT2 = platform(surf_xy =(WIDTH/4, 20), center_xy = (750, 450))
+PT3 = platform(surf_xy =(WIDTH/5, 20), center_xy = (950, 150))
 P1 = Player()
 
 #TODO: this thing does not have to be grouped
@@ -206,6 +210,9 @@ player_sprite.add(P1)
 
 platform_sprites = pygame.sprite.Group()
 platform_sprites.add(PT1)
+platform_sprites.add(PT2)
+platform_sprites.add(PT3)
+
 
 while True:
     for event in pygame.event.get():
