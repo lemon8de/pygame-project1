@@ -33,7 +33,7 @@ class Player(pygame.sprite.Sprite):
         size = (160, 224)
 
         #initial state
-        position = (300,585)
+        position = (300,680)
         self.rect = pygame.Rect((position),size)
         self.pos = vec((position))
         self.vel = vec(0,0)
@@ -44,6 +44,7 @@ class Player(pygame.sprite.Sprite):
 
         #special variables to finetune animation
         self.can_jump = False
+        self.started_falling = False
         self.falling = True
 
         #used by some animations that should hold its last frame
@@ -71,7 +72,7 @@ class Player(pygame.sprite.Sprite):
         self.image = player_idle_right[self.animation_index]
 
         #frame based animation rendering
-        self.animation_frames = 9 
+        self.animation_frames = 6 #speed
         self.current_frame = 0
 
     def move(self):
@@ -99,22 +100,6 @@ class Player(pygame.sprite.Sprite):
         self.rect.midbottom = self.pos
 
     def animation_update(self):
-        #locking animations, currently jumping and falling counts as locking
-        #definition of locking: to repeat the last two frames of an extended player state
-        if self.animation_lock['jumping']:
-            #ending the lock
-            if int(self.vel.y) == 0:
-                self.animation_index = 0
-                self.animation_lock['jumping'] = False
-                self.animation_lock['falling'] = True
-
-            #stop the animation at this last frame
-            if self.image == self.images[-1]:
-                return
-        #jump
-        if int(self.vel.y) < 0: 
-            self.images = self.jump_left if self.facing_left else self.jump_right
-
         #walk
         if int(self.vel.x) > 0 and not self.falling:
             self.images = self.walk_right
@@ -129,15 +114,32 @@ class Player(pygame.sprite.Sprite):
 
         #jump
         if int(self.vel.y) < 0: 
+            if self.animation_lock['jumping']:
+                #stop the animation at this last frame
+                if self.image == self.images[-1]:
+                    return
             self.images = self.jump_left if self.facing_left else self.jump_right
-        #fall
-        if int(self.vel.y) > 0:
+
+        #this if statement means that the jump velocity is now zero, we should play falling animations now
+        if int(self.vel.y) > 0 and self.falling:
+            if not self.started_falling:
+                self.animation_index = 0
+                self.started_falling = True
+                self.animation_lock['jumping'] = False
+                self.animation_lock['falling'] = True
+
             self.images = self.fall_left if self.facing_left else self.fall_right
+            if self.animation_lock['falling']:
+                #stop the animation at this last frame
+                if self.image == self.images[-1]:
+                    return
 
+        #removes the weird ass animation artifact when self.vel.y is zero when jumping
+        if int(self.vel.y) == 0 and self.falling:
+            return
+
+        #regular animation
         self.current_frame += 1
-        #currently just jumping and falling
-
-        #non-locking animation
         if self.current_frame >= self.animation_frames:
             self.current_frame = 0
             self.animation_index = (self.animation_index + 1) % len(self.images)
@@ -153,6 +155,7 @@ class Player(pygame.sprite.Sprite):
             self.falling = False
             self.can_jump = True
             self.animation_lock['falling'] = False
+            self.started_falling = False
 
         #animation
         self.animation_update()
