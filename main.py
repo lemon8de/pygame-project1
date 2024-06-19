@@ -5,15 +5,12 @@ from pygame.locals import *
 
 pygame.init()
 vec = pygame.math.Vector2
-
 HEIGHT = 450
 WIDTH = 400
 ACC = 0.5
 FRIC = -0.12
 FPS = 60
-
 FramePerSec = pygame.time.Clock()
-
 displaysurface = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Game")
 
@@ -45,9 +42,9 @@ class Player(pygame.sprite.Sprite):
         self.facing_left = False
     
         #handles animation
+        #---animation sprite sheets
         self.idle_right = player_idle_right
         self.idle_left = player_idle_left
-
         self.walk_left = player_walk_left
         self.walk_right = player_walk_right
 
@@ -60,7 +57,7 @@ class Player(pygame.sprite.Sprite):
         self.current_frame = 0
 
     def move(self):
-        self.acc = vec(0,0.5)
+        self.acc = vec(0,2)
         pressed_keys = pygame.key.get_pressed()
 
         if pressed_keys[K_LEFT]:
@@ -108,14 +105,16 @@ class Player(pygame.sprite.Sprite):
 
     def update(self):
         #platform detection
-        hits = pygame.sprite.spritecollide(P1, platforms, False)
+        hits = pygame.sprite.spritecollide(P1, platform_sprites, False)
         if hits:
             self.pos.y = hits[0].rect.top + 1
             self.vel.y = 0 
+
+        #animation
         self.animation_update()
 
     def jump(self):
-        self.vel.y = -15
+        self.vel.y = -25
 
 class platform(pygame.sprite.Sprite):
     def __init__(self):
@@ -135,12 +134,12 @@ player_walk_right = [pygame.transform.flip(image, True, False) for image in play
 PT1 = platform()
 P1 = Player()
 
-all_sprites = pygame.sprite.Group()
-#all_sprites.add(PT1)
-all_sprites.add(P1)
+#TODO: this thing does not have to be grouped
+player_sprite = pygame.sprite.Group()
+player_sprite.add(P1)
 
-platforms = pygame.sprite.Group()
-platforms.add(PT1)
+platform_sprites = pygame.sprite.Group()
+platform_sprites.add(PT1)
 
 while True:
     for event in pygame.event.get():
@@ -158,16 +157,13 @@ while True:
     #feels like this just blacks the screen for a redraw
     displaysurface.fill((0,0,0))
 
-    #we have to use blit on platforms because it has no image yet
-    for entity in platforms:
+    #we have to use blit on platform_sprites because it has no image yet
+    for entity in platform_sprites:
         displaysurface.blit(entity.surf, entity.rect)
 
     #draw runs like it wants images
-    all_sprites.draw(displaysurface)
+    player_sprite.draw(displaysurface)
     
-
-
-
     pygame.display.update()
     FramePerSec.tick(FPS)
 
