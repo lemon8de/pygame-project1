@@ -41,6 +41,7 @@ class Player(pygame.sprite.Sprite):
         self.can_jump = False
         self.started_falling = False #used by the falling animation to figure out if the peak height of the jump is reached
         self.falling = True #used by animations other than jump to prioritize the jumping sprite sheet
+        self.backdashed_ground = False
 
         #used by some animations that should hold its last frame
         #example a very long jump, a very long fall
@@ -48,7 +49,8 @@ class Player(pygame.sprite.Sprite):
             'jumping' : False,
             'falling' : False,
             'left_movement' : False,
-            'right_movement' : False
+            'right_movement' : False,
+            'in_backdash' : False
         }
     
         #handles animation
@@ -61,6 +63,8 @@ class Player(pygame.sprite.Sprite):
         self.jump_right = player_jump_right
         self.fall_left = player_fall_left
         self.fall_right = player_fall_right
+        self.backdg_left = player_backdg_left
+        self.backdg_right = player_backdg_right
 
         #initialize the state of the player,
         self.animation_index = 0
@@ -82,6 +86,17 @@ class Player(pygame.sprite.Sprite):
             self.acc.x = ACC
             self.facing_right = True
             self.facing_left = False
+        if pressed_keys[K_z] and not self.backdashed_ground and not self.falling:
+            self.backdashed_ground = True
+            self.animation_lock['right_movement'] = True
+            self.animation_lock['right_movement'] = True
+
+            self.can_jump = False
+            self.falling = True
+            self.vel.y = -10 #jump value
+            self.acc = vec(30,0.8) if self.facing_left else vec(-30,0.8)
+            self.animation_index = 0
+            self.animation_lock['in_backdash'] = True
 
         self.acc.x += self.vel.x * FRIC
         self.vel += self.acc
@@ -101,9 +116,6 @@ class Player(pygame.sprite.Sprite):
         #get some velocity values to figure out what animations to run
         vel_x = int(self.vel.x)
         vel_y = int(self.vel.y)
-        #removes the weird ass animation artifact when self.vel.y is zero when jumping
-        if vel_y == 0 and self.falling:
-            return
 
         #walk animation
         if vel_x > 0 and not self.falling:
@@ -129,7 +141,7 @@ class Player(pygame.sprite.Sprite):
 
         #falling animation
         #this if statement means that the jump velocity is now zero, we should play falling animations now
-        if vel_y > 0 and self.falling:
+        if vel_y >= 0 and self.falling and not self.animation_lock['in_backdash']:
             if not self.started_falling:
                 #the animation_index seems to be a continous number being appended, this is an issue if you want to run a fresh sprite sheet
                 self.animation_index = 0
@@ -142,6 +154,13 @@ class Player(pygame.sprite.Sprite):
                 #stop the animation at this last frame
                 if self.image == self.images[-1]:
                     return
+
+        if self.backdashed_ground:
+            self.images = self.backdg_right if self.facing_left else self.backdg_left
+            if self.animation_lock['in_backdash'] and (self.images == self.backdg_left or self.images == self.backdg_right):
+                if self.image == self.images[-1]:
+                    return
+
 
         #regular animation
         self.current_frame += 1
@@ -163,8 +182,14 @@ class Player(pygame.sprite.Sprite):
             self.can_jump = True
             self.animation_lock['falling'] = False
             self.started_falling = False
-            P1.animation_lock['right_movement'] = False
-            P1.animation_lock['left_movement'] = False
+            self.animation_lock['right_movement'] = False
+            self.animation_lock['left_movement'] = False
+            self.animation_lock['in_backdash'] = False
+
+            #remove the accel from the backdash
+            self.backdashed_ground = False
+            self.acc = (0,0.8)
+
 
         #animation
         self.animation_update()
@@ -197,6 +222,9 @@ player_jump_right = [pygame.transform.flip(image, True, False) for image in play
 #---- player jump todo: this is special because there are two locking frames: the jump peak and the jump falling frame
 player_fall_left = load_images(path='sprites/player/fall')
 player_fall_right = [pygame.transform.flip(image, True, False) for image in player_fall_left] 
+#---- player backdash
+player_backdg_right = load_images(path='sprites/player/backdash_ground')
+player_backdg_left = [pygame.transform.flip(image, True, False) for image in player_backdg_right] 
 
 
 PT1 = platform(surf_xy =(WIDTH, 20), center_xy = (WIDTH/2, HEIGHT - 10))
@@ -220,6 +248,7 @@ while True:
             pygame.quit()
             sys.exit()
 
+        #idk why this is here
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE and P1.can_jump:
                 #make sure to start the animation at the start
@@ -231,6 +260,7 @@ while True:
                     P1.animation_lock['right_movement'] = True
                     P1.animation_lock['left_movement'] = False
                 P1.jump()
+        
 
     P1.move()
     P1.update()
