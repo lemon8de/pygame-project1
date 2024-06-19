@@ -40,13 +40,19 @@ class Player(pygame.sprite.Sprite):
         self.accel = vec(0,0)
         self.facing_right = True
         self.facing_left = False
+        self.can_jump = False
+        self.falling = True
     
         #handles animation
         #---animation sprite sheets
-        self.idle_right = player_idle_right
         self.idle_left = player_idle_left
+        self.idle_right = player_idle_right
+
         self.walk_left = player_walk_left
         self.walk_right = player_walk_right
+
+        self.jump_left = player_jump_left
+        self.jump_right = player_jump_right
 
         self.animation_index = 0
         #this is the first image to display? question mark?
@@ -64,10 +70,6 @@ class Player(pygame.sprite.Sprite):
             self.acc.x = -ACC
         if pressed_keys[K_RIGHT]:
             self.acc.x = ACC
-
-        #self.acc.x += self.vel.x * FRIC
-        #self.vel += self.acc
-        #self.pos += self.vel + 0.5 * self.acc
 
         self.acc.x += self.vel.x * FRIC
         self.vel += self.acc
@@ -101,6 +103,8 @@ class Player(pygame.sprite.Sprite):
         if self.current_frame >= self.animation_frames:
             self.current_frame = 0
             self.animation_index = (self.animation_index + 1) % len(self.images)
+            #animation lock on last frame
+            #self.animation_index = self.animation_index if self.animation_index == len(self.images) - 1 else (self.animation_index + 1) % len(self.images)
             self.image = self.images[self.animation_index]
 
     def update(self):
@@ -110,10 +114,14 @@ class Player(pygame.sprite.Sprite):
             self.pos.y = hits[0].rect.top + 1
             self.vel.y = 0 
 
+            self.falling = False
+            self.can_jump = True
+
         #animation
         self.animation_update()
 
     def jump(self):
+        self.can_jump = False
         self.vel.y = -25
 
 class platform(pygame.sprite.Sprite):
@@ -127,9 +135,12 @@ class platform(pygame.sprite.Sprite):
 #---- player idle
 player_idle_left = load_images(path='sprites/player/idle')
 player_idle_right = [pygame.transform.flip(image, True, False) for image in player_idle_left] 
-
+#---- player walk
 player_walk_left = load_images(path='sprites/player/walk')
 player_walk_right = [pygame.transform.flip(image, True, False) for image in player_walk_left] 
+#---- player jump todo: this is special because there are two locking frames: the jump peak and the jump falling frame
+player_jump_left = load_images(path='sprites/player/jump')
+player_jump_right = [pygame.transform.flip(image, True, False) for image in player_jump_left] 
 
 PT1 = platform()
 P1 = Player()
@@ -148,7 +159,7 @@ while True:
             sys.exit()
 
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
+            if event.key == pygame.K_SPACE and P1.can_jump:
                 P1.jump()
 
     P1.move()
