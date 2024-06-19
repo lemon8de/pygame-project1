@@ -7,7 +7,7 @@ pygame.init()
 vec = pygame.math.Vector2
 HEIGHT = 450
 WIDTH = 400
-ACC = 0.5
+ACC = 0.8
 FRIC = -0.12
 FPS = 60
 FramePerSec = pygame.time.Clock()
@@ -59,17 +59,21 @@ class Player(pygame.sprite.Sprite):
         self.image = player_idle_right[self.animation_index]
 
         #frame based animation rendering
-        self.animation_frames = 6
+        self.animation_frames = 6 
         self.current_frame = 0
 
     def move(self):
-        self.acc = vec(0,2)
+        self.acc = vec(0,0.5)
         pressed_keys = pygame.key.get_pressed()
 
         if pressed_keys[K_LEFT]:
             self.acc.x = -ACC
+            self.facing_left = True
+            self.facing_right = False
         if pressed_keys[K_RIGHT]:
             self.acc.x = ACC
+            self.facing_right = True
+            self.facing_left = False
 
         self.acc.x += self.vel.x * FRIC
         self.vel += self.acc
@@ -83,28 +87,29 @@ class Player(pygame.sprite.Sprite):
         self.rect.midbottom = self.pos
 
     def animation_update(self):
+        # if statement boongaloo: walk, idle, and jump are fighting to be used as animation, some priorities should be done
+        #jump will take priority, whatever the x and y velocities, if we are jumping, we are jumping animating
+
         #walk
-        if int(self.vel.x) > 0:
+        if int(self.vel.x) > 0 and not self.falling:
             self.images = self.walk_right
-            self.facing_right = True
-            self.facing_left = False
-        elif int(self.vel.x) < 0:
+        elif int(self.vel.x) < 0 and not self.falling:
             self.images = self.walk_left
-            self.facing_left = True
-            self.facing_right = False
 
         #idle
-        if int(self.vel.x) == 0 and self.facing_right:
+        if int(self.vel.x) == 0 and self.facing_right and not self.falling:
             self.images = self.idle_right
-        if int(self.vel.x) == 0 and self.facing_left:
+        if int(self.vel.x) == 0 and self.facing_left and not self.falling:
             self.images = self.idle_left
+
+        #jump
+        if int(self.vel.y) != 0:
+            self.images = self.jump_left if self.facing_left else self.jump_right
 
         self.current_frame += 1
         if self.current_frame >= self.animation_frames:
             self.current_frame = 0
             self.animation_index = (self.animation_index + 1) % len(self.images)
-            #animation lock on last frame
-            #self.animation_index = self.animation_index if self.animation_index == len(self.images) - 1 else (self.animation_index + 1) % len(self.images)
             self.image = self.images[self.animation_index]
 
     def update(self):
@@ -122,7 +127,8 @@ class Player(pygame.sprite.Sprite):
 
     def jump(self):
         self.can_jump = False
-        self.vel.y = -25
+        self.falling = True
+        self.vel.y = -15
 
 class platform(pygame.sprite.Sprite):
     def __init__(self):
@@ -160,6 +166,8 @@ while True:
 
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE and P1.can_jump:
+                #make sure to start the animation at the start
+                P1.animation_index = 0
                 P1.jump()
 
     P1.move()
