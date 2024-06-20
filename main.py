@@ -172,8 +172,10 @@ class Player(pygame.sprite.Sprite):
     def update(self):
         #landed on the ground
         hits = pygame.sprite.spritecollide(P1, platform_sprites, False)
+        self.falling = True
         for collision in hits:
             if collision.below:
+                self.falling = False
                 self.pos.y = hits[0].rect.top + 1
                 self.vel.y = 0 
 
@@ -189,7 +191,6 @@ class Player(pygame.sprite.Sprite):
                 #remove the accel from the backdash
                 self.backdashed_ground = False
                 self.acc = (0,0.8)
-
 
         #animation
         self.animation_update()
