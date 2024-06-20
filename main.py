@@ -7,7 +7,7 @@ pygame.init()
 vec = pygame.math.Vector2
 HEIGHT = 700
 WIDTH = 1200
-ACC = 1.3
+ACC = 1.0
 FRIC = -0.12
 FPS = 60
 FramePerSec = pygame.time.Clock()
@@ -172,23 +172,23 @@ class Player(pygame.sprite.Sprite):
     def update(self):
         #landed on the ground
         hits = pygame.sprite.spritecollide(P1, platform_sprites, False)
-        if hits:
-            #collision
-            self.pos.y = hits[0].rect.top + 1
-            self.vel.y = 0 
+        for collision in hits:
+            if collision.below:
+                self.pos.y = hits[0].rect.top + 1
+                self.vel.y = 0 
 
-            #reset player states
-            self.falling = False
-            self.can_jump = True
-            self.animation_lock['falling'] = False
-            self.started_falling = False
-            self.animation_lock['right_movement'] = False
-            self.animation_lock['left_movement'] = False
-            self.animation_lock['in_backdash'] = False
+                #reset player states
+                self.falling = False
+                self.can_jump = True
+                self.animation_lock['falling'] = False
+                self.started_falling = False
+                self.animation_lock['right_movement'] = False
+                self.animation_lock['left_movement'] = False
+                self.animation_lock['in_backdash'] = False
 
-            #remove the accel from the backdash
-            self.backdashed_ground = False
-            self.acc = (0,0.8)
+                #remove the accel from the backdash
+                self.backdashed_ground = False
+                self.acc = (0,0.8)
 
 
         #animation
@@ -206,8 +206,11 @@ class platform(pygame.sprite.Sprite):
         #self.surf = pygame.Surface((WIDTH, 20))
         self.surf = pygame.Surface(surf_xy)
         self.surf.fill((255,0,0))
+        self.center_pos = vec(center_xy)
         #self.rect = self.surf.get_rect(center = (WIDTH/2, HEIGHT - 10))
         self.rect = self.surf.get_rect(center = center_xy)
+        self.above = False
+        self.below = True
 
 #animation set
 #---- player idle
@@ -228,7 +231,7 @@ player_backdg_left = [pygame.transform.flip(image, True, False) for image in pla
 
 
 PT1 = platform(surf_xy =(WIDTH, 20), center_xy = (WIDTH/2, HEIGHT - 10))
-PT2 = platform(surf_xy =(WIDTH/4, 20), center_xy = (750, 450))
+PT2 = platform(surf_xy =(WIDTH/4, 20), center_xy = (750, 550))
 PT3 = platform(surf_xy =(WIDTH/5, 20), center_xy = (950, 150))
 P1 = Player()
 
@@ -270,6 +273,15 @@ while True:
 
     #we have to use blit on platform_sprites because it has no image yet
     for entity in platform_sprites:
+        if entity.center_pos.y < P1.pos.y:
+            entity.surf.fill((0,255,0))
+            entity.above = True
+            entity.below = False
+        else:
+            entity.surf.fill((255,0,0))
+            entity.above = False
+            entity.below = True
+
         displaysurface.blit(entity.surf, entity.rect)
 
     #draw runs like it wants images
