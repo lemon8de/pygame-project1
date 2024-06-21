@@ -100,7 +100,17 @@ class Player(pygame.sprite.Sprite):
 
         self.acc.x += self.vel.x * FRIC
         self.vel += self.acc
-        self.pos += self.vel + 0.5 * self.acc
+        movement_delta = self.vel + 0.5 * self.acc
+
+        #save the old position of the current frame
+        old_pos = self.pos
+
+        #move the character
+        new_pos = self.pos + movement_delta
+        self.pos = new_pos
+
+        #find how much change on player position
+        delta_pos = new_pos - old_pos
 
         #out of bounds positional reset to the other side
         if self.pos.x > WIDTH:
@@ -110,6 +120,9 @@ class Player(pygame.sprite.Sprite):
 
         #don't know what this is
         self.rect.midbottom = self.pos
+
+        #well if you include delta pos x, the platform will keep falling and the character will keep falling lol
+        return delta_pos
 
     def animation_update(self):
 
@@ -213,6 +226,12 @@ class platform(pygame.sprite.Sprite):
         self.above = False
         self.below = True
 
+    def camera_move(self, player_movement):
+        #restrict camera movement to x
+        self.center_pos.x -= player_movement.x
+        self.rect = self.surf.get_rect(center = self.center_pos)
+
+
 #animation set
 #---- player idle
 player_idle_left = load_images(path='sprites/player/idle')
@@ -234,6 +253,10 @@ player_backdg_left = [pygame.transform.flip(image, True, False) for image in pla
 PT1 = platform(surf_xy =(WIDTH, 20), center_xy = (WIDTH/2, HEIGHT - 10))
 PT2 = platform(surf_xy =(WIDTH/4, 20), center_xy = (750, 550))
 PT3 = platform(surf_xy =(WIDTH/5, 20), center_xy = (950, 150))
+all_entities = pygame.sprite.Group()
+all_entities.add(PT1)
+all_entities.add(PT2)
+all_entities.add(PT3)
 P1 = Player()
 
 #TODO: this thing does not have to be grouped
@@ -266,11 +289,16 @@ while True:
                 P1.jump()
         
 
-    P1.move()
+    player_movement = P1.move()
+    #print(player_movement)
     P1.update()
 
     #feels like this just blacks the screen for a redraw
     displaysurface.fill((0,0,0))
+
+    #trying to move the platforms, some type of camera movement
+    for entity in all_entities:
+        entity.camera_move(player_movement)
 
     #we have to use blit on platform_sprites because it has no image yet
     for entity in platform_sprites:
