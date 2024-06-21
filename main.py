@@ -1,6 +1,7 @@
 import sys
 import pygame
 import os
+import random
 from pygame.locals import *
 
 pygame.init()
@@ -268,6 +269,10 @@ platform_sprites.add(PT1)
 platform_sprites.add(PT2)
 platform_sprites.add(PT3)
 
+#im so sorry, but this is shit
+platforms_spawned = 0
+#platform spawning distance check
+platforms_dcheck = 300
 
 while True:
     for event in pygame.event.get():
@@ -295,6 +300,20 @@ while True:
 
     #feels like this just blacks the screen for a redraw
     displaysurface.fill((0,0,0))
+
+    #im so sorry
+    #trying to spawn more platforms, emphasis on try
+    should_spawn = int(P1.pos.x) > platforms_dcheck
+    print(should_spawn)
+    if should_spawn:
+        platforms_dcheck += 300
+
+        position = P1.pos.x + random.uniform(0.5, 1.5) * 500 #platform distance from the player
+
+        new_platform = platform(surf_xy =(random.randint(300, 700), 20), center_xy = (position, random.randint(300, 700)))
+        all_entities.add(new_platform)
+        platform_sprites.add(new_platform)
+
 
     #trying to move the platforms, some type of camera movement
     for entity in all_entities:
