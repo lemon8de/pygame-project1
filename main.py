@@ -114,16 +114,18 @@ class Player(pygame.sprite.Sprite):
         delta_pos = new_pos - old_pos
 
         #out of bounds positional reset to the other side
+        '''
         if self.pos.x > WIDTH:
             self.pos.x = 0
         if self.pos.x < 0:
             self.pos.x = WIDTH
+        '''
 
         #don't know what this is
         self.rect.midbottom = self.pos
 
         #well if you include delta pos x, the platform will keep falling and the character will keep falling lol
-        return delta_pos
+        return delta_pos 
 
     def animation_update(self):
 
@@ -229,7 +231,7 @@ class platform(pygame.sprite.Sprite):
 
     def camera_move(self, player_movement):
         #restrict camera movement to x
-        self.center_pos.x -= player_movement.x
+        self.center_pos.x -= player_movement.x * 1.2
         self.rect = self.surf.get_rect(center = self.center_pos)
 
 
